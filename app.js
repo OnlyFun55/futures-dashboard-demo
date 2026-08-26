@@ -6018,64 +6018,10 @@ ${disclaimer}
     const extremeMoveNote = (W && W.legs && W.legs.some((l) => l.extreme_move_alert))
       ? `<div style="font-size:11.5px;color:var(--warn);padding:2px 4px">⚠ มีขาที่เพิ่งวิ่งแรงผิดปกติ (trailing 30d เกิน ±${150}%) — เป็น tail event อย่า extrapolate ว่าจะเกิดต่อเนื่อง</div>` : "";
 
-    const SS = window.STRESS_SIZING;
-    const stressPanel = !SS ? "" : (() => {
-      const st = SS.stress;
-      const scanRows = st.scan.map((s) => {
-        const liq = s.liquidated.length ? `<span style="color:var(--neg);font-weight:600">${esc(s.liquidated.join(", "))}</span>` : "—";
-        return `<tr>
-          <td>${s.days} วัน</td>
-          <td class="tnum" style="font-size:11px;color:var(--tx-3)">${esc(s.from)} → ${esc(s.to)}</td>
-          <td class="tnum">$${s.min_eq.toLocaleString()}</td>
-          <td class="tnum" style="color:var(--neg);font-weight:600">${s.min_pct.toFixed(1)}%</td>
-          <td class="tnum">${s.final_pct > 0 ? "+" : ""}${s.final_pct.toFixed(1)}%</td>
-          <td>${liq}</td>
-        </tr>`;
-      }).join("");
-      const sizeRows = SS.sizing.map((z) => `<tr>
-          <td class="tnum">$${z.capital.toLocaleString()}</td>
-          <td class="tnum">$${z.left.toLocaleString()}</td>
-          <td class="tnum" style="color:var(--neg)">−$${z.loss.toLocaleString()}</td>
-          <td class="tnum" style="color:var(--warn)">+${z.recover_pct.toFixed(1)}%</td>
-        </tr>`).join("");
-      const liqPts = Object.entries(st.liq_points)
-        .map(([k, v]) => v == null ? `${k}: ถือสด ไม่มี liq` : `<b style="color:var(--neg)">${k}: ร่วง ${v.toFixed(1)}% = หมด margin</b>`)
-        .join(" · ");
-      return `
-<div class="panel" style="margin-bottom:14px;border:1px solid color-mix(in oklch,var(--neg) 30%,transparent)">
-  <div class="panel-h"><h2>🔻 ถ้าคิดผิดจะเหลืออะไร — stress test ด้วยราคาจริง</h2>
-    <span class="tb-chip" style="margin-left:auto;color:var(--tx-3)">สแกนทุกช่วงเวลา ไม่เลือกช่วงเอง · โมเดล liquidation จริง</span>
-  </div>
-  <div class="tbl-wrap"><table class="tbl">
-    <thead><tr><th>ยาว</th><th>ช่วงที่แย่สุดที่เจอ</th><th>equity ต่ำสุด</th><th>ลดลง</th><th>ปลายช่วง</th><th>ขาที่ถูก liquidate</th></tr></thead>
-    <tbody>${scanRows}</tbody>
-  </table></div>
-  <div style="font-size:11.5px;color:var(--tx-2);padding:10px 4px 2px;line-height:1.8">
-    <b style="color:var(--neg)">ประเด็นสำคัญที่สุด:</b> ขา SWAP ใช้ leverage 3x — ${liqPts}<br>
-    ช่วง 180 วันที่แย่สุด (${esc(st.scan[1] ? st.scan[1].from : "")} → ${esc(st.scan[1] ? st.scan[1].to : "")})
-    <b>ทั้ง XRP และ ZEC ถูก liquidate ทั้งคู่</b> — margin หายถาวร ไม่ฟื้นแม้ราคาเด้งกลับทีหลัง<br>
-    <span style="color:var(--tx-3)">เทียบ: ช่วง ต.ค.2025→ปัจจุบัน ที่ดูน่ากลัว จริงๆ พอร์ตนี้กลับได้ ${st.oct_final_pct > 0 ? "+" : ""}${st.oct_final_pct.toFixed(1)}%
-    เพราะ ZEC วิ่ง +205% — แต่ XRP ก็ยังถูก liquidate ทิ้งไปในช่วงนั้นเหมือนกัน</span>
-  </div>
-</div>
-<div class="panel" style="margin-bottom:14px">
-  <div class="panel-h"><h2>💰 ถ้า worst case (${st.worst_min_pct.toFixed(1)}%) เกิดซ้ำ</h2></div>
-  <div class="tbl-wrap"><table class="tbl">
-    <thead><tr><th>เงินที่ลงในระบบนี้</th><th>เหลือ</th><th>ขาดทุน</th><th>ต้องโตกี่ % ถึงกลับทุน</th></tr></thead>
-    <tbody>${sizeRows}</tbody>
-  </table></div>
-  <div style="font-size:11.5px;color:var(--tx-3);padding:10px 4px 2px;line-height:1.7">
-    ตารางนี้เป็นแค่คณิตศาสตร์จากตัวเลข worst case จริง <b>ไม่ใช่คำแนะนำว่าควรลงเท่าไหร่</b> —
-    Claude ไม่ใช่ที่ปรึกษาการเงิน จำนวนที่รับได้ขึ้นกับสถานะการเงินของคุณเอง
-  </div>
-</div>`;
-    })();
-
     main.innerHTML = `
 ${disclaimer}
 ${heartbeat}
 ${kpis}
-${stressPanel}
 <div class="panel">
   <div class="panel-h"><h2>ขาแต่ละตัว — position จริง vs target ที่แนะนำ</h2></div>
   <div class="tbl-wrap"><table class="tbl">
