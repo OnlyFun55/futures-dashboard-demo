@@ -5949,8 +5949,18 @@ ${disclaimer}
     const overall = (W && W.overall_status) || (D && D.overall_status) || "N/A";
     const overallColor = overall === "REVIEW" ? "var(--warn)" : overall === "OK" ? "var(--pos)" : "var(--tx-3)";
 
+    // leverage ที่ใช้จริง = notional รวมของตำแหน่งที่เปิดอยู่ / equity
+    // ต่างจาก W.leverage (ค่า vol-target ที่ระบบตั้งไว้ทั้งเดือน) และต่างจาก lever 3x ที่ตั้งบน OKX
+    // (ตัวหลังเป็นแค่เพดาน margin ไม่ใช่ exposure จริง)
+    const grossNotional = (D && D.legs)
+      ? D.legs.reduce((s, l) => s + (l.has_position ? Math.abs(parseFloat(l.notional_usd) || 0) : 0), 0)
+      : null;
+    const actualLev = (grossNotional != null && equity) ? grossNotional / equity : null;
+    const levColor = actualLev == null ? "var(--tx)"
+      : actualLev > 2 ? "var(--neg)" : actualLev > 1 ? "var(--warn)" : "var(--pos)";
+
     const kpis = `
-<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:4px;margin-bottom:14px">
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;padding:4px;margin-bottom:14px">
   <div style="background:var(--bg-2);border-radius:6px;padding:12px">
     <div style="font-size:10px;color:var(--tx-3);text-transform:uppercase">Equity</div>
     <div style="font-family:var(--mono);font-size:19px;font-weight:600;margin-top:3px">$${equity != null ? equity.toFixed(2) : "N/A"}</div>
@@ -5960,10 +5970,16 @@ ${disclaimer}
     <div style="font-family:var(--mono);font-size:19px;font-weight:600;margin-top:3px;color:${D && D.drawdown_pct > 0 ? "var(--warn)" : "var(--tx)"}">
       ${D ? "-" + D.drawdown_pct.toFixed(2) + "%" : "N/A"}</div>
   </div>
-  <div style="background:var(--bg-2);border-radius:6px;padding:12px">
-    <div style="font-size:10px;color:var(--tx-3);text-transform:uppercase">Leverage เดือนนี้</div>
+  <div style="background:var(--bg-2);border-radius:6px;padding:12px" title="notional รวมของตำแหน่งที่เปิดอยู่ หารด้วย equity — คือ exposure จริงต่อราคา ไม่ใช่ค่า lever ที่ตั้งบน OKX">
+    <div style="font-size:10px;color:var(--tx-3);text-transform:uppercase">Leverage ที่ใช้จริง</div>
+    <div style="font-family:var(--mono);font-size:19px;font-weight:700;margin-top:3px;color:${levColor}">
+      ${actualLev != null ? actualLev.toFixed(3) + "x" : "N/A"}</div>
+    <div style="font-size:10px;color:var(--tx-3);margin-top:2px">notional $${grossNotional != null ? grossNotional.toFixed(0) : "—"} / equity</div>
+  </div>
+  <div style="background:var(--bg-2);border-radius:6px;padding:12px" title="ค่าที่ระบบ vol-targeting คำนวณไว้ตอนต้นเดือน ใช้คูณหา target notional — ไม่ใช่ leverage ที่ใช้อยู่จริง">
+    <div style="font-size:10px;color:var(--tx-3);text-transform:uppercase">Leverage เป้า (vol-target)</div>
     <div style="font-family:var(--mono);font-size:19px;font-weight:600;margin-top:3px">${W ? W.leverage.toFixed(2) + "x" : "N/A"}</div>
-    <div style="font-size:10px;color:var(--tx-3);margin-top:2px">${W && W.is_new_month ? "recomputed เดือนนี้" : W && W.intramonth_review ? "ปรับกลางเดือน (vol spike)" : ""}</div>
+    <div style="font-size:10px;color:var(--tx-3);margin-top:2px">${W && W.is_new_month ? "recomputed เดือนนี้" : W && W.intramonth_review ? "ปรับกลางเดือน (vol spike)" : "ล็อกทั้งเดือน"}</div>
   </div>
   <div style="background:var(--bg-2);border-radius:6px;padding:12px">
     <div style="font-size:10px;color:var(--tx-3);text-transform:uppercase">Realized vol (30/60/10d)</div>
